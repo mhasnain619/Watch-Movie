@@ -1,15 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { fetchTrendingMovies } from '../Api';
-import { Grid, Card, CardMedia, CardContent, Typography, Container } from '@mui/material';
+import { Grid, Card, CardMedia, CardContent, Typography, Container, TextField, MenuItem, Select, InputLabel, FormControl, Box } from '@mui/material';
 import axios from 'axios';
 import { Helmet } from 'react-helmet'; // For SEO meta tags
 
 const Home = () => {
     const [movies, setMovies] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedGenre, setSelectedGenre] = useState('');
+    const [filteredMovies, setFilteredMovies] = useState([]);
+
+    const genres = [
+        { id: 28, name: 'Action' },
+        { id: 12, name: 'Adventure' },
+        { id: 35, name: 'Comedy' },
+        { id: 18, name: 'Drama' },
+        { id: 10751, name: 'Family' },
+        { id: 14, name: 'Fantasy' },
+        { id: 27, name: 'Horror' },
+        { id: 10749, name: 'Romance' },
+        { id: 878, name: 'Science Fiction' },
+        { id: 53, name: 'Thriller' },
+    ];
 
     useEffect(() => {
-        fetchTrendingMovies().then(setMovies);
+        fetchTrendingMovies().then((data) => {
+            setMovies(data);
+            setFilteredMovies(data);  // Initialize filteredMovies with all movies
+        });
     }, []);
+
+    useEffect(() => {
+        // Filter movies based on search term and selected genre
+        let filtered = movies.filter((movie) =>
+            movie.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (selectedGenre) {
+            filtered = filtered.filter((movie) => movie.genre_ids.includes(selectedGenre));
+        }
+
+        setFilteredMovies(filtered);
+    }, [searchTerm, selectedGenre, movies]);
 
     const fetchMovieTrailer = async (movieId) => {
         const API_KEY = '45d14068b7bc2e1455cea5e2fff3102c';
@@ -57,9 +89,36 @@ const Home = () => {
                 <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
                     Trending Movies
                 </Typography>
+
+                {/* Search Bar and Genre Filter */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <TextField
+                        label="Search by Movie Title"
+                        variant="outlined"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ width: '48%' }}
+                    />
+                    <FormControl sx={{ width: '48%' }}>
+                        <InputLabel>Genre</InputLabel>
+                        <Select
+                            value={selectedGenre}
+                            label="Genre"
+                            onChange={(e) => setSelectedGenre(e.target.value)}
+                        >
+                            <MenuItem value="">All Genres</MenuItem>
+                            {genres.map((genre) => (
+                                <MenuItem key={genre.id} value={genre.id}>
+                                    {genre.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Box>
+
                 <Grid container spacing={4} justifyContent="center">
-                    {movies.map((movie) => (
-                        <Grid item xs={12} sm={6} md={3} lg={2} key={movie.id}>
+                    {filteredMovies.map((movie) => (
+                        <Grid item xs={12} sm={6} md={3} lg={3} key={movie.id}>
                             <Card
                                 sx={{ width: 200, height: 400, boxShadow: 3, borderRadius: 2, display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
                                 onClick={() => fetchMovieTrailer(movie.id)}
